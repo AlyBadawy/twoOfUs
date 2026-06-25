@@ -19,7 +19,7 @@ spec:
     path: k8s
   destination:
     server: https://kubernetes.default.svc
-    namespace: twoofus
+    namespace: websites
   syncPolicy:
     automated:
       prune: true

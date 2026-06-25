@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: twoofus
-  namespace: twoofus
+  namespace: websites
   labels:
     app.kubernetes.io/name: twoofus
     homelab/stack: twoofus
