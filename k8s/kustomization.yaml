@@ -13,4 +13,4 @@ resources:
 images:
 - name: ghcr.io/alybadawy/twoofus
   newName: ghcr.io/alybadawy/twoofus
-  newTag: b6f8a7572a676ee60fea0e0cd7a3f9ea1aa69eeb
+  newTag: ab713d25cd013cd63008505e40b873a141b1f3e0
