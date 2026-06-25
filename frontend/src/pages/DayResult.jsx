@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api';
+import { getUserManager } from '../auth';
 
 const t = {
   bg:              '#F4EFE8',
@@ -43,10 +44,24 @@ const CheckIcon = ({ color = t.accent, size = 14 }) => (
   </svg>
 );
 
-function ScoreHero({ score, total }) {
-  const label = score === total
-    ? 'Perfect match! 🎉'
-    : `You matched on ${score} question${score !== 1 ? 's' : ''}`;
+const ROMANTIC_LABELS = ['Just getting started', 'A little spark', 'Growing closer',
+                         'Beautiful harmony', 'Nearly in sync', 'Perfect match! 🎉'];
+
+const HeartSvg = ({ fill = '#B85C43' }) => (
+  <svg width="11" height="10" viewBox="0 0 11 10" fill="none">
+    <path d="M5.5 9C5.5 9 1 6 1 3C1 1.9 1.9 1 3 1C3.85 1 4.55 1.5 5.5 2.5C6.45 1.5 7.15 1 8 1C9.1 1 10 1.9 10 3C10 6 5.5 9 5.5 9Z" fill={fill}/>
+  </svg>
+);
+
+function ScoreHero({ score, total, username }) {
+  const matchLabel = score === total
+    ? `You matched on all ${total} questions 🎉`
+    : score >= 3 ? `You matched on ${score} questions 🎉`
+    : `You matched on ${score} questions`;
+
+  const pct = `${Math.round((score / total) * 100)}%`;
+  const initial = (username || 'Y')[0].toUpperCase();
+
   return (
     <div style={{ margin: '0 16px 16px',
                   background: 'linear-gradient(140deg, #F2E4DE 0%, #FDF9F7 60%, #DEF0EE 100%)',
@@ -64,13 +79,51 @@ function ScoreHero({ score, total }) {
         </span>
       </div>
       <p style={{ font: `400 14px/1 'DM Sans', sans-serif`, color: '#5A4A46', marginBottom: 16 }}>
-        {label}
+        {matchLabel}
       </p>
-      <div style={{ display: 'flex', gap: 7, justifyContent: 'center' }}>
-        {Array.from({ length: total }, (_, i) => (
-          <div key={i} style={{ width: 9, height: 9, borderRadius: '50%',
-                                background: i < score ? t.accent : t.divider }} />
-        ))}
+
+      {/* Romantic progress bar */}
+      <div style={{ padding: '0 4px', marginTop: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* You */}
+          <div style={{ width: 26, height: 26, borderRadius: '50%', background: t.accent,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0, boxShadow: '0 2px 8px rgba(184,92,67,0.35)' }}>
+            <span style={{ font: `600 10px/1 'DM Sans', sans-serif`, color: '#FFF' }}>
+              {initial}
+            </span>
+          </div>
+
+          {/* Track */}
+          <div style={{ flex: 1, position: 'relative', padding: '10px 0' }}>
+            <div style={{ height: 7, background: 'rgba(28,25,23,0.1)', borderRadius: 20,
+                          position: 'relative', overflow: 'visible' }}>
+              <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: pct,
+                            background: 'linear-gradient(to right, #B85C43, #C4795A, #B8965A, #4A8B8B)',
+                            borderRadius: 20 }} />
+              <div style={{ position: 'absolute', left: pct, top: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: 22, height: 22, borderRadius: '50%', background: '#FFF',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            animation: 'heart-glow 2.4s ease-in-out infinite', zIndex: 2 }}>
+                <HeartSvg />
+              </div>
+            </div>
+          </div>
+
+          {/* Partner */}
+          <div style={{ width: 26, height: 26, borderRadius: '50%', background: t.teal,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0, boxShadow: '0 2px 8px rgba(74,139,139,0.3)' }}>
+            <HeartSvg fill="#FFF" />
+          </div>
+        </div>
+
+        <p style={{ font: `italic 13px/1 'DM Serif Display', serif`,
+                    color: t.muted, textAlign: 'center', margin: '5px 0 0',
+                    letterSpacing: '0.01em' }}>
+          {ROMANTIC_LABELS[Math.min(score, ROMANTIC_LABELS.length - 1)]}
+        </p>
       </div>
     </div>
   );
@@ -188,14 +241,21 @@ function ResultCard({ detail }) {
 export default function DayResult() {
   const { date } = useParams();
   const navigate = useNavigate();
-  const [result, setResult] = useState(null);
-  const [error, setError]   = useState(null);
+  const [result, setResult]   = useState(null);
+  const [error, setError]     = useState(null);
+  const [username, setUsername] = useState(null);
 
   useEffect(() => {
     api.getDayResult(date)
       .then(setResult)
       .catch(() => setError('Results not available for this day.'));
   }, [date]);
+
+  useEffect(() => {
+    getUserManager().then(m => m.getUser()).then(u => {
+      setUsername(u?.profile?.preferred_username || u?.profile?.name || null);
+    });
+  }, []);
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', minHeight: '100vh', background: t.bg }}>
@@ -243,7 +303,7 @@ export default function DayResult() {
         </div>
       ) : (
         <div style={{ paddingBottom: 40 }}>
-          <ScoreHero score={result.score} total={result.totalQuestions} />
+          <ScoreHero score={result.score} total={result.totalQuestions} username={username} />
 
           {/* Legend */}
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', margin: '0 16px 14px' }}>
