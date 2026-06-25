@@ -106,26 +106,81 @@ function ResultCard({ detail }) {
 
       <div style={{ height: 1, background: t.border, marginBottom: 10 }} />
 
-      {[
-        { label: 'You', bg: t.accentLight, letterColor: t.accent,
-          textColor: t.accentDark, answer: detail.myAnswer },
-        { label: 'Partner', bg: t.tealLight, letterColor: t.teal,
-          textColor: t.tealText, answer: detail.partnerAnswer },
-      ].map(({ label, bg, letterColor, textColor, answer }) => (
-        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8,
-                                  marginBottom: label === 'You' ? 7 : 0 }}>
-          <span style={{ font: `500 10px/1 'DM Sans', sans-serif`,
-                         color: t.muted, width: 44, flexShrink: 0 }}>{label}</span>
-          <div style={{ flex: 1, background: bg, borderRadius: 8,
-                        padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ font: `700 10px/1 'DM Sans', sans-serif`,
-                           color: letterColor, flexShrink: 0 }}>{answer}</span>
-            <span style={{ font: `400 12px/1 'DM Sans', sans-serif`, color: textColor }}>
-              {optionText(detail, answer)}
-            </span>
+      {detail.match ? (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ font: `500 10px/1 'DM Sans', sans-serif`,
+                           color: t.matchGreenText, width: 44, flexShrink: 0 }}>Both</span>
+            <div style={{ flex: 1, background: t.matchGreenLight, borderRadius: 8,
+                          padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 6,
+                          border: `1px solid rgba(122,184,125,0.3)` }}>
+              <span style={{ font: `700 10px/1 'DM Sans', sans-serif`,
+                             color: t.matchGreenText, flexShrink: 0 }}>
+                {detail.myAnswer}
+              </span>
+              <span style={{ font: `400 12px/1 'DM Sans', sans-serif`, color: t.matchGreenText }}>
+                {optionText(detail, detail.myAnswer)}
+              </span>
+            </div>
           </div>
-        </div>
-      ))}
+          {(detail.myNote || detail.partnerNote) && (
+            <div style={{ marginTop: 8, paddingLeft: 52, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {detail.myNote && (
+                <p style={{ margin: 0, font: `italic 11px/1.4 'DM Sans', sans-serif`, color: t.accentText, opacity: 0.9 }}>
+                  <strong style={{ fontStyle: 'normal', marginRight: 4 }}>You:</strong>{detail.myNote}
+                </p>
+              )}
+              {detail.partnerNote && (
+                <p style={{ margin: 0, font: `italic 11px/1.4 'DM Sans', sans-serif`, color: t.tealText, opacity: 0.9 }}>
+                  <strong style={{ fontStyle: 'normal', marginRight: 4 }}>Partner:</strong>{detail.partnerNote}
+                </p>
+              )}
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ font: `500 10px/1 'DM Sans', sans-serif`,
+                           color: t.muted, width: 44, flexShrink: 0 }}>You</span>
+            <div style={{ flex: 1, background: t.accentLight, borderRadius: 8,
+                          padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ font: `700 10px/1 'DM Sans', sans-serif`,
+                             color: t.accent, flexShrink: 0 }}>{detail.myAnswer}</span>
+              <span style={{ font: `400 12px/1 'DM Sans', sans-serif`, color: t.accentDark }}>
+                {optionText(detail, detail.myAnswer)}
+              </span>
+            </div>
+          </div>
+          {detail.myNote && (
+            <p style={{ margin: '4px 0 0', paddingLeft: 52,
+                        font: `italic 11px/1.4 'DM Sans', sans-serif`, color: t.accentText, opacity: 0.9 }}>
+              {detail.myNote}
+            </p>
+          )}
+
+          <div style={{ height: 7 }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ font: `500 10px/1 'DM Sans', sans-serif`,
+                           color: t.muted, width: 44, flexShrink: 0 }}>Partner</span>
+            <div style={{ flex: 1, background: t.tealLight, borderRadius: 8,
+                          padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ font: `700 10px/1 'DM Sans', sans-serif`,
+                             color: t.teal, flexShrink: 0 }}>{detail.partnerAnswer}</span>
+              <span style={{ font: `400 12px/1 'DM Sans', sans-serif`, color: t.tealText }}>
+                {optionText(detail, detail.partnerAnswer)}
+              </span>
+            </div>
+          </div>
+          {detail.partnerNote && (
+            <p style={{ margin: '4px 0 0', paddingLeft: 52,
+                        font: `italic 11px/1.4 'DM Sans', sans-serif`, color: t.tealText, opacity: 0.9 }}>
+              {detail.partnerNote}
+            </p>
+          )}
+        </>
+      )}
     </div>
   );
 }

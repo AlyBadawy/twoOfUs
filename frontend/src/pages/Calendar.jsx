@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 
@@ -8,7 +8,6 @@ const t = {
   accent:      '#B85C43',
   accentLight: '#F2E4DE',
   teal:        '#4A8B8B',
-  tealLight:   '#DEF0EE',
   matchGreen:  '#7AB87D',
   dark:        '#1C1917',
   mid:         '#4A3F3C',
@@ -18,117 +17,101 @@ const t = {
   divider:     '#DDD6CF',
 };
 
-const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-function getMondayOf(dateStr) {
-  const d = new Date(dateStr + 'T12:00:00');
-  const dow = d.getDay();
-  const diff = dow === 0 ? -6 : 1 - dow;
-  d.setDate(d.getDate() + diff);
-  return d.toISOString().split('T')[0];
-}
-
-function addDays(dateStr, n) {
-  const d = new Date(dateStr + 'T12:00:00');
-  d.setDate(d.getDate() + n);
-  return d.toISOString().split('T')[0];
-}
-
-function formatWeekRange(mondayStr) {
-  const mon = new Date(mondayStr + 'T12:00:00');
-  const sun = new Date(mondayStr + 'T12:00:00');
-  sun.setDate(mon.getDate() + 6);
-  const opts = { month: 'short', day: 'numeric' };
-  return `${mon.toLocaleDateString('en-US', opts)} – ${sun.toLocaleDateString('en-US', opts)}`;
-}
-
-function formatDayNum(dateStr) {
-  return new Date(dateStr + 'T12:00:00').getDate();
-}
+const MONTH_NAMES = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December',
+];
+const DAY_HEADERS = ['S','M','T','W','T','F','S'];
 
 const todayStr = new Date().toISOString().split('T')[0];
-const todayMonday = getMondayOf(todayStr);
 
-// ── Day card ─────────────────────────────────────────────────────────────────
-function DayCard({ day, index, onClick }) {
-  const isToday   = day.date === todayStr;
-  const clickable = day.mySubmitted && day.partnerSubmitted && !day.isFuture;
+function toDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 
-  let bg     = t.card;
-  let border = `1px solid ${t.border}`;
-  let cursor = 'default';
+function buildGrid(year, month) {
+  const firstDay = new Date(year, month, 1);
+  const lastDay  = new Date(year, month + 1, 0);
 
-  if (day.isFuture) {
-    bg = 'rgba(255,255,255,0.4)';
-    border = `1px solid ${t.border}`;
-  } else if (clickable) {
-    bg = '#F7FBF7';
-    border = `1.5px solid ${t.matchGreen}`;
-    cursor = 'pointer';
-  } else if (isToday) {
-    border = `1.5px solid ${t.accent}`;
+  // Back up to the Sunday on or before the 1st
+  const start = new Date(firstDay);
+  start.setDate(firstDay.getDate() - firstDay.getDay());
+
+  // Forward to the Saturday on or after the last
+  const end = new Date(lastDay);
+  end.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
+
+  const cells = [];
+  const cur = new Date(start);
+  while (cur <= end) {
+    cells.push({ dateStr: toDateStr(cur), inMonth: cur.getMonth() === month, dayNum: cur.getDate() });
+    cur.setDate(cur.getDate() + 1);
+  }
+  return cells;
+}
+
+// ── Day cell ──────────────────────────────────────────────────────────────────
+function DayCell({ cell, data, onClick }) {
+  const { dateStr, inMonth, dayNum } = cell;
+  const isToday = dateStr === todayStr;
+
+  if (!inMonth) {
+    return (
+      <div style={{ minHeight: 58, display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', paddingTop: 6, opacity: 0.18 }}>
+        <span style={{ font: `400 13px/1 'DM Sans', sans-serif`, color: t.dark }}>
+          {dayNum}
+        </span>
+      </div>
+    );
   }
 
+  const bothAnswered = data?.hasQuestions && data.mySubmitted && data.partnerSubmitted;
+  const clickable    = bothAnswered && !data?.isFuture;
+  const isFuture     = data?.isFuture ?? (dateStr > todayStr);
+
+  let bg     = 'transparent';
+  let border = 'none';
+  if (isToday && !bothAnswered) border = `1.5px solid ${t.accent}`;
+  if (bothAnswered)             { bg = '#F0FAF1'; border = `1.5px solid rgba(122,184,125,0.35)`; }
+
   return (
-    <div onClick={clickable ? onClick : undefined}
-      style={{ flex: '1 0 0', minWidth: 44, borderRadius: 12,
-               background: bg, border, cursor,
-               display: 'flex', flexDirection: 'column', alignItems: 'center',
-               padding: '10px 4px 10px', gap: 4,
-               opacity: day.isFuture ? 0.4 : 1,
-               transition: 'transform 0.1s',
-             }}
-      onMouseEnter={e => { if (clickable) e.currentTarget.style.transform = 'translateY(-2px)'; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
+    <div
+      onClick={clickable ? onClick : undefined}
+      style={{
+        minHeight: 58, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', paddingTop: 6, gap: 4,
+        borderRadius: 8, background: bg, border, boxSizing: 'border-box',
+        cursor: clickable ? 'pointer' : 'default',
+        opacity: isFuture ? 0.28 : 1,
+        transition: 'background 0.1s',
+      }}
+      onMouseEnter={e => { if (clickable) e.currentTarget.style.background = '#E2F5E3'; }}
+      onMouseLeave={e => { if (clickable) e.currentTarget.style.background = bg; }}
     >
-      {/* Day name */}
-      <span style={{ font: `500 10px/1 'DM Sans', sans-serif`, color: t.muted,
-                     letterSpacing: '0.04em' }}>
-        {DAY_NAMES[index]}
+      <span style={{
+        font: `${isToday ? '700' : '400'} 13px/1 'DM Sans', sans-serif`,
+        color: isToday ? t.accent : t.dark,
+      }}>
+        {dayNum}
       </span>
 
-      {/* Date number */}
-      <span style={{ font: isToday
-          ? `700 16px/1 'DM Sans', sans-serif`
-          : `400 16px/1 'DM Sans', sans-serif`,
-                     color: isToday ? t.accent : t.dark }}>
-        {formatDayNum(day.date)}
-      </span>
-
-      {/* Status */}
-      <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', gap: 4, minHeight: 40 }}>
-        {!day.hasQuestions && !day.isFuture && (
-          <span style={{ font: `400 9px/1.2 'DM Sans', sans-serif`,
-                         color: t.faint, textAlign: 'center' }}>
-            No quiz
+      {data?.hasQuestions && !isFuture && (
+        bothAnswered ? (
+          <span style={{ font: `italic 12px/1 'DM Serif Display', serif`, color: t.matchGreen }}>
+            {data.score}/{data.totalQuestions}
           </span>
-        )}
-
-        {day.hasQuestions && day.mySubmitted && day.partnerSubmitted && (
-          <>
-            <span style={{ font: `italic 18px/1 'DM Serif Display', serif`,
-                           color: t.matchGreen }}>
-              {day.score}/{day.totalQuestions}
-            </span>
-            <span style={{ font: `400 9px/1 'DM Sans', sans-serif`,
-                           color: t.matchGreen }}>
-              matched
-            </span>
-          </>
-        )}
-
-        {day.hasQuestions && (!day.mySubmitted || !day.partnerSubmitted) && !day.isFuture && (
-          <div style={{ display: 'flex', gap: 4 }}>
-            <div title="You" style={{ width: 10, height: 10, borderRadius: '50%',
-                                       background: day.mySubmitted ? t.accent : 'transparent',
-                                       border: `1.5px solid ${t.accent}` }} />
-            <div title="Partner" style={{ width: 10, height: 10, borderRadius: '50%',
-                                           background: day.partnerSubmitted ? t.teal : 'transparent',
-                                           border: `1.5px solid ${t.teal}` }} />
+        ) : (
+          <div style={{ display: 'flex', gap: 3 }}>
+            <div style={{ width: 5, height: 5, borderRadius: '50%',
+                          background: data.mySubmitted      ? t.accent : 'transparent',
+                          border: `1.5px solid ${t.accent}` }} />
+            <div style={{ width: 5, height: 5, borderRadius: '50%',
+                          background: data.partnerSubmitted ? t.teal   : 'transparent',
+                          border: `1.5px solid ${t.teal}` }} />
           </div>
-        )}
-      </div>
+        )
+      )}
     </div>
   );
 }
@@ -136,29 +119,45 @@ function DayCard({ day, index, onClick }) {
 // ── Calendar page ─────────────────────────────────────────────────────────────
 export default function Calendar() {
   const navigate = useNavigate();
-  const [weekMonday, setWeekMonday] = useState(todayMonday);
-  const [days, setDays]             = useState(null);
-  const [loading, setLoading]       = useState(true);
+  const now = new Date();
+
+  const [year,  setYear]  = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth());
+  const [dayData, setDayData] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+
+  const prevMonth = () => {
+    if (month === 0) { setYear(y => y - 1); setMonth(11); }
+    else             { setMonth(m => m - 1); }
+  };
+
+  const nextMonth = () => {
+    if (isCurrentMonth) return;
+    if (month === 11) { setYear(y => y + 1); setMonth(0); }
+    else              { setMonth(m => m + 1); }
+  };
+
+  const goToday = () => { setYear(now.getFullYear()); setMonth(now.getMonth()); };
 
   useEffect(() => {
     setLoading(true);
-    api.getWeek(weekMonday).then(data => {
-      setDays(data);
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    api.getMonth(dateStr).then(data => {
+      const map = {};
+      data.forEach(d => { map[d.date] = d; });
+      setDayData(map);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [weekMonday]);
+  }, [year, month]);
 
-  const goBack    = () => setWeekMonday(prev => addDays(prev, -7));
-  const goForward = () => setWeekMonday(prev => addDays(prev, 7));
-  const goToday   = () => setWeekMonday(todayMonday);
-
-  const isCurrentWeek = weekMonday === todayMonday;
+  const cells = useMemo(() => buildGrid(year, month), [year, month]);
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', minHeight: '100vh', background: t.bg }}>
       {/* Header */}
-      <div style={{ padding: '16px 20px 8px', display: 'flex',
-                    alignItems: 'center', gap: 10 }}>
+      <div style={{ padding: '16px 20px 8px', display: 'flex', alignItems: 'center', gap: 10 }}>
         <button onClick={() => navigate('/')}
           style={{ background: 'none', border: 'none', cursor: 'pointer',
                    padding: 4, display: 'flex', alignItems: 'center' }}>
@@ -171,24 +170,23 @@ export default function Calendar() {
                      color: t.dark, margin: 0, flex: 1 }}>
           History
         </h1>
-        {!isCurrentWeek && (
+        {!isCurrentMonth && (
           <button onClick={goToday}
             style={{ font: `500 12px/1 'DM Sans', sans-serif`,
                      color: t.accent, background: t.accentLight,
-                     border: 'none', borderRadius: 20, padding: '6px 12px',
-                     cursor: 'pointer' }}>
+                     border: 'none', borderRadius: 20, padding: '6px 12px', cursor: 'pointer' }}>
             Today
           </button>
         )}
       </div>
 
       <div style={{ height: 1, background: `linear-gradient(to right, transparent, ${t.divider}, transparent)`,
-                    margin: '0 20px 16px' }} />
+                    margin: '0 20px 14px' }} />
 
-      {/* Week navigation */}
+      {/* Month navigation */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '0 20px', marginBottom: 14 }}>
-        <button onClick={goBack}
+                    padding: '0 20px', marginBottom: 12 }}>
+        <button onClick={prevMonth}
           style={{ width: 32, height: 32, borderRadius: '50%', border: `1px solid ${t.border}`,
                    background: t.card, cursor: 'pointer', display: 'flex',
                    alignItems: 'center', justifyContent: 'center' }}>
@@ -198,14 +196,14 @@ export default function Calendar() {
           </svg>
         </button>
 
-        <span style={{ font: `500 13px/1 'DM Sans', sans-serif`, color: t.mid }}>
-          {formatWeekRange(weekMonday)}
+        <span style={{ font: `500 14px/1 'DM Sans', sans-serif`, color: t.mid }}>
+          {MONTH_NAMES[month]} {year}
         </span>
 
-        <button onClick={goForward} disabled={isCurrentWeek}
+        <button onClick={nextMonth} disabled={isCurrentMonth}
           style={{ width: 32, height: 32, borderRadius: '50%', border: `1px solid ${t.border}`,
-                   background: t.card, cursor: isCurrentWeek ? 'default' : 'pointer',
-                   opacity: isCurrentWeek ? 0.35 : 1,
+                   background: t.card, cursor: isCurrentMonth ? 'default' : 'pointer',
+                   opacity: isCurrentMonth ? 0.35 : 1,
                    display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M5 3L9 7L5 11" stroke={t.mid} strokeWidth="1.6"
@@ -214,21 +212,38 @@ export default function Calendar() {
         </button>
       </div>
 
-      {/* Day cards */}
+      {/* Grid */}
       <div style={{ padding: '0 14px 40px' }}>
+        {/* Day-of-week headers */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)',
+                      marginBottom: 4 }}>
+          {DAY_HEADERS.map((d, i) => (
+            <div key={i} style={{ textAlign: 'center',
+                                  font: `500 10px/1 'DM Sans', sans-serif`,
+                                  color: t.faint, padding: '4px 0' }}>
+              {d}
+            </div>
+          ))}
+        </div>
+
+        {/* Day cells */}
         {loading ? (
-          <div style={{ display: 'flex', gap: 6 }}>
-            {Array.from({ length: 7 }, (_, i) => (
-              <div key={i} style={{ flex: '1 0 0', height: 110, borderRadius: 12,
-                                    background: 'rgba(255,255,255,0.5)',
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+            {Array.from({ length: 35 }, (_, i) => (
+              <div key={i} style={{ minHeight: 58, borderRadius: 8,
+                                    background: 'rgba(255,255,255,0.4)',
                                     border: `1px solid ${t.border}` }} />
             ))}
           </div>
         ) : (
-          <div style={{ display: 'flex', gap: 6 }}>
-            {(days ?? []).map((day, i) => (
-              <DayCard key={day.date} day={day} index={i}
-                onClick={() => navigate(`/history/${day.date}`)} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+            {cells.map(cell => (
+              <DayCell
+                key={cell.dateStr}
+                cell={cell}
+                data={dayData[cell.dateStr]}
+                onClick={() => navigate(`/history/${cell.dateStr}`)}
+              />
             ))}
           </div>
         )}

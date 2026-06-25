@@ -137,7 +137,7 @@ function AppHeader({ title, date, theme, username, onCalendar }) {
 }
 
 // ── QuestionCard ──────────────────────────────────────────────────────────────
-function QuestionCard({ question, selected, onSelect, locked }) {
+function QuestionCard({ question, selected, onSelect, locked, note, onNoteChange }) {
   return (
     <div style={{ margin: '0 16px 10px', background: t.card, borderRadius: 16,
                   padding: 18, boxShadow: '0 2px 14px rgba(28,25,23,0.07)' }}>
@@ -198,6 +198,29 @@ function QuestionCard({ question, selected, onSelect, locked }) {
           );
         })}
       </div>
+
+      {/* Optional notes field — shown when not locked, or locked but has content */}
+      {(!locked || note) && (
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${t.border}` }}>
+          <textarea
+            value={note || ''}
+            onChange={e => onNoteChange(question.position, e.target.value)}
+            disabled={locked}
+            placeholder="Any thoughts? (optional)"
+            maxLength={500}
+            rows={2}
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              background: locked ? 'transparent' : t.optionBg,
+              border: `1px solid ${t.border}`,
+              borderRadius: 8, padding: '8px 10px',
+              font: "400 12px/1.4 'DM Sans', sans-serif",
+              color: t.mid, resize: 'none', outline: 'none',
+              opacity: locked ? 0.6 : 1,
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -317,6 +340,9 @@ function ScoreHero({ score, total }) {
 
 // ── ResultCard ────────────────────────────────────────────────────────────────
 function ResultCard({ detail, question }) {
+  const myText      = question ? optionText(question, detail.myAnswer)      : detail.myAnswer;
+  const partnerText = question ? optionText(question, detail.partnerAnswer) : detail.partnerAnswer;
+
   return (
     <div style={{ margin: '0 16px 10px', background: t.card, borderRadius: 16,
                   padding: 16, boxShadow: '0 2px 14px rgba(28,25,23,0.07)',
@@ -348,37 +374,87 @@ function ResultCard({ detail, question }) {
 
       <div style={{ height: 1, background: t.border, marginBottom: 10 }} />
 
-      {/* You row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
-        <span style={{ font: "500 10px/1 'DM Sans', sans-serif",
-                       color: t.muted, width: 44, flexShrink: 0 }}>You</span>
-        <div style={{ flex: 1, background: t.accentLight, borderRadius: 8,
-                      padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ font: "700 10px/1 'DM Sans', sans-serif",
-                         color: t.accent, flexShrink: 0 }}>
-            {detail.myAnswer}
-          </span>
-          <span style={{ font: "400 12px/1 'DM Sans', sans-serif", color: t.accentDark }}>
-            {question ? optionText(question, detail.myAnswer) : detail.myAnswer}
-          </span>
-        </div>
-      </div>
+      {detail.match ? (
+        // Combined row when both chose the same answer
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ font: "500 10px/1 'DM Sans', sans-serif",
+                           color: t.matchGreenText, width: 44, flexShrink: 0 }}>Both</span>
+            <div style={{ flex: 1, background: t.matchGreenLight, borderRadius: 8,
+                          padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 6,
+                          border: `1px solid rgba(122,184,125,0.3)` }}>
+              <span style={{ font: "700 10px/1 'DM Sans', sans-serif",
+                             color: t.matchGreenText, flexShrink: 0 }}>
+                {detail.myAnswer}
+              </span>
+              <span style={{ font: "400 12px/1 'DM Sans', sans-serif", color: t.matchGreenText }}>
+                {myText}
+              </span>
+            </div>
+          </div>
+          {(detail.myNote || detail.partnerNote) && (
+            <div style={{ marginTop: 8, paddingLeft: 52, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {detail.myNote && (
+                <p style={{ margin: 0, font: "italic 11px/1.4 'DM Sans', sans-serif", color: t.accentText, opacity: 0.9 }}>
+                  <strong style={{ fontStyle: 'normal', marginRight: 4 }}>You:</strong>{detail.myNote}
+                </p>
+              )}
+              {detail.partnerNote && (
+                <p style={{ margin: 0, font: "italic 11px/1.4 'DM Sans', sans-serif", color: t.tealText, opacity: 0.9 }}>
+                  <strong style={{ fontStyle: 'normal', marginRight: 4 }}>Partner:</strong>{detail.partnerNote}
+                </p>
+              )}
+            </div>
+          )}
+        </>
+      ) : (
+        // Separate rows when answers differ
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ font: "500 10px/1 'DM Sans', sans-serif",
+                           color: t.muted, width: 44, flexShrink: 0 }}>You</span>
+            <div style={{ flex: 1, background: t.accentLight, borderRadius: 8,
+                          padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ font: "700 10px/1 'DM Sans', sans-serif",
+                             color: t.accent, flexShrink: 0 }}>
+                {detail.myAnswer}
+              </span>
+              <span style={{ font: "400 12px/1 'DM Sans', sans-serif", color: t.accentDark }}>
+                {myText}
+              </span>
+            </div>
+          </div>
+          {detail.myNote && (
+            <p style={{ margin: '4px 0 0', paddingLeft: 52,
+                        font: "italic 11px/1.4 'DM Sans', sans-serif", color: t.accentText, opacity: 0.9 }}>
+              {detail.myNote}
+            </p>
+          )}
 
-      {/* Partner row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ font: "500 10px/1 'DM Sans', sans-serif",
-                       color: t.muted, width: 44, flexShrink: 0 }}>Partner</span>
-        <div style={{ flex: 1, background: t.tealLight, borderRadius: 8,
-                      padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ font: "700 10px/1 'DM Sans', sans-serif",
-                         color: t.teal, flexShrink: 0 }}>
-            {detail.partnerAnswer}
-          </span>
-          <span style={{ font: "400 12px/1 'DM Sans', sans-serif", color: t.tealText }}>
-            {question ? optionText(question, detail.partnerAnswer) : detail.partnerAnswer}
-          </span>
-        </div>
-      </div>
+          <div style={{ height: 7 }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ font: "500 10px/1 'DM Sans', sans-serif",
+                           color: t.muted, width: 44, flexShrink: 0 }}>Partner</span>
+            <div style={{ flex: 1, background: t.tealLight, borderRadius: 8,
+                          padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ font: "700 10px/1 'DM Sans', sans-serif",
+                             color: t.teal, flexShrink: 0 }}>
+                {detail.partnerAnswer}
+              </span>
+              <span style={{ font: "400 12px/1 'DM Sans', sans-serif", color: t.tealText }}>
+                {partnerText}
+              </span>
+            </div>
+          </div>
+          {detail.partnerNote && (
+            <p style={{ margin: '4px 0 0', paddingLeft: 52,
+                        font: "italic 11px/1.4 'DM Sans', sans-serif", color: t.tealText, opacity: 0.9 }}>
+              {detail.partnerNote}
+            </p>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -389,12 +465,13 @@ const page = { maxWidth: 430, margin: '0 auto', minHeight: '100vh' };
 // ── Today (main component) ────────────────────────────────────────────────────
 export default function Today() {
   const navigate = useNavigate();
-  const [phase, setPhase]           = useState('loading');
+  const [phase, setPhase]             = useState('loading');
   const [questionSet, setQuestionSet] = useState(null);
-  const [selected, setSelected]     = useState({});
-  const [result, setResult]         = useState(null);
-  const [username, setUsername]     = useState(null);
-  const [error, setError]           = useState(null);
+  const [selected, setSelected]       = useState({});
+  const [notes, setNotes]             = useState({});
+  const [result, setResult]           = useState(null);
+  const [username, setUsername]       = useState(null);
+  const [error, setError]             = useState(null);
 
   const pollRef = useRef(null);
 
@@ -451,13 +528,16 @@ export default function Today() {
   const handleSelect = (position, key) =>
     setSelected(prev => ({ ...prev, [position]: key }));
 
+  const handleNoteChange = (position, text) =>
+    setNotes(prev => ({ ...prev, [position]: text }));
+
   const handleSubmit = async () => {
     setPhase('submitting');
-    const answers = questionSet.questions
-      .sort((a, b) => a.position - b.position)
-      .map(q => selected[q.position]);
+    const sorted = questionSet.questions.sort((a, b) => a.position - b.position);
+    const answers = sorted.map(q => selected[q.position]);
+    const notesArr = sorted.map(q => notes[q.position] || '');
     try {
-      await api.submitAnswers(answers);
+      await api.submitAnswers(answers, notesArr);
       markSubmittedToday();
       setPhase('waiting');
       startPollingResults();
@@ -575,7 +655,9 @@ export default function Today() {
           <QuestionCard key={q.id} question={q}
                         selected={selected[q.position]}
                         onSelect={handleSelect}
-                        locked={locked} />
+                        locked={locked}
+                        note={notes[q.position]}
+                        onNoteChange={handleNoteChange} />
         ))}
       </div>
 

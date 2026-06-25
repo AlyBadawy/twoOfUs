@@ -40,10 +40,11 @@ async function request(path, options = {}) {
 }
 
 export const api = {
-  getToday:      ()        => request('/today'),
-  submitAnswers: (answers) => request('/today/submit', { method: 'POST', body: JSON.stringify({ answers }) }),
-  getResult:     ()        => request('/today/result'),
-  getMe:         ()        => request('/me'),
-  getWeek:       (date)    => request(`/history/week?date=${date}`),
-  getDayResult:  (date)    => request(`/history/${date}`),
+  getToday:      ()              => request('/today'),
+  submitAnswers: (answers, notes) => request('/today/submit', { method: 'POST', body: JSON.stringify({ answers, notes }) }),
+  getResult:     ()              => request('/today/result'),
+  getMe:         ()              => request('/me'),
+  getWeek:       (date)          => request(`/history/week?date=${date}`),
+  getMonth:      (date)          => request(`/history/month?date=${date}`),
+  getDayResult:  (date)          => request(`/history/${date}`),
 };

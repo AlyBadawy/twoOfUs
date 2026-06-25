@@ -93,6 +93,7 @@ public class QuizController {
             }
         }
 
+        List<String> notes = dto.getNotes();
         answerRepository.save(
             Answer.builder()
                 .user(currentUser)
@@ -102,6 +103,11 @@ public class QuizController {
                 .answer3(answers.get(2))
                 .answer4(answers.get(3))
                 .answer5(answers.get(4))
+                .notes1(extractNote(notes, 0))
+                .notes2(extractNote(notes, 1))
+                .notes3(extractNote(notes, 2))
+                .notes4(extractNote(notes, 3))
+                .notes5(extractNote(notes, 4))
                 .build()
         );
 
@@ -142,14 +148,10 @@ public class QuizController {
         List<Question> questions =
             questionRepository.findByQuestionSetIdOrderByPosition(questionSet.getId());
 
-        String[] myAnswers = {
-            myAnswer.getAnswer1(), myAnswer.getAnswer2(), myAnswer.getAnswer3(),
-            myAnswer.getAnswer4(), myAnswer.getAnswer5()
-        };
-        String[] partnerAnswers = {
-            partnerAnswer.getAnswer1(), partnerAnswer.getAnswer2(), partnerAnswer.getAnswer3(),
-            partnerAnswer.getAnswer4(), partnerAnswer.getAnswer5()
-        };
+        String[] myAnswers    = { myAnswer.getAnswer1(), myAnswer.getAnswer2(), myAnswer.getAnswer3(), myAnswer.getAnswer4(), myAnswer.getAnswer5() };
+        String[] partnerAnswers = { partnerAnswer.getAnswer1(), partnerAnswer.getAnswer2(), partnerAnswer.getAnswer3(), partnerAnswer.getAnswer4(), partnerAnswer.getAnswer5() };
+        String[] myNotes      = { myAnswer.getNotes1(), myAnswer.getNotes2(), myAnswer.getNotes3(), myAnswer.getNotes4(), myAnswer.getNotes5() };
+        String[] partnerNotes = { partnerAnswer.getNotes1(), partnerAnswer.getNotes2(), partnerAnswer.getNotes3(), partnerAnswer.getNotes4(), partnerAnswer.getNotes5() };
 
         int score = 0;
         List<ResultDetailDto> details = new ArrayList<>();
@@ -171,6 +173,8 @@ public class QuizController {
                 .myAnswer(mine)
                 .partnerAnswer(theirs)
                 .match(match)
+                .myNote(myNotes[i])
+                .partnerNote(partnerNotes[i])
                 .build());
         }
 
@@ -184,5 +188,11 @@ public class QuizController {
                 .details(details)
                 .build()
         );
+    }
+
+    private String extractNote(List<String> notes, int index) {
+        if (notes == null || notes.size() <= index) return null;
+        String n = notes.get(index);
+        return (n != null && !n.isBlank()) ? n.trim() : null;
     }
 }

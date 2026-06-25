@@ -15,4 +15,6 @@ public class ResultDetailDto {
     private String myAnswer;
     private String partnerAnswer;
     private boolean match;
+    private String myNote;
+    private String partnerNote;
 }
