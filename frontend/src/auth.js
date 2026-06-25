@@ -14,6 +14,8 @@ async function init() {
     response_type: 'code',
     scope: 'openid profile email',
     userStore: new WebStorageStateStore({ store: window.localStorage }),
+    automaticSilentRenew: false,  // no silent_redirect_uri configured; renew via full redirect
+    monitorSession: false,        // avoids check_session_iframe cross-origin issues
   });
 }
 
