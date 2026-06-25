@@ -1,19 +1,31 @@
 package com.twoofus.controller;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.resource.PathResourceResolver;
 
-/**
- * Forwards all client-side routes to index.html so React Router can handle them.
- * The regex excludes paths with file extensions (CSS, JS, images, etc.) so static
- * assets are still served directly. Spring MVC's @RestController mappings for
- * /api/** take precedence over this catch-all.
- */
-@Controller
-public class SpaController {
+import java.io.IOException;
 
-    @RequestMapping(value = {"/{path:^(?!api$)[^\\.]*}", "/{path:^(?!api$)[^\\.]*}/**"})
-    public String forward() {
-        return "forward:/index.html";
+@Configuration
+public class SpaController implements WebMvcConfigurer {
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/**")
+                .addResourceLocations("classpath:/static/")
+                .resourceChain(true)
+                .addResolver(new PathResourceResolver() {
+                    @Override
+                    protected Resource getResource(String resourcePath, Resource location)
+                            throws IOException {
+                        Resource resource = location.createRelative(resourcePath);
+                        return resource.exists() && resource.isReadable()
+                                ? resource
+                                : new ClassPathResource("/static/index.html");
+                    }
+                });
     }
 }
