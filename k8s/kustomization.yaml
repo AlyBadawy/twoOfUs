@@ -4,12 +4,13 @@ kind: Kustomization
 namespace: websites
 
 resources:
-  - deployment.yaml
-  - service.yaml
-  - ingress.yaml
-  - external-secret.yaml
+- deployment.yaml
+- service.yaml
+- ingress.yaml
+- external-secret.yaml
 
 # CI updates newTag on every push to main via `kustomize edit set image`
 images:
-  - name: ghcr.io/alybadawy/twoofus
-    newTag: latest
+- name: ghcr.io/alybadawy/twoofus
+  newName: ghcr.io/alybadawy/twoofus
+  newTag: a599985d0f31f5e83a0a7913ef97026e4e037d7d
