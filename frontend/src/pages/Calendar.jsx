@@ -127,8 +127,10 @@ export default function Calendar() {
   const [loading, setLoading] = useState(true);
 
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+  const isFirstMonth   = year === 2026 && month === 5; // June 2026
 
   const prevMonth = () => {
+    if (isFirstMonth) return;
     if (month === 0) { setYear(y => y - 1); setMonth(11); }
     else             { setMonth(m => m - 1); }
   };
@@ -186,10 +188,11 @@ export default function Calendar() {
       {/* Month navigation */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '0 20px', marginBottom: 12 }}>
-        <button onClick={prevMonth}
+        <button onClick={prevMonth} disabled={isFirstMonth}
           style={{ width: 32, height: 32, borderRadius: '50%', border: `1px solid ${t.border}`,
-                   background: t.card, cursor: 'pointer', display: 'flex',
-                   alignItems: 'center', justifyContent: 'center' }}>
+                   background: t.card, cursor: isFirstMonth ? 'default' : 'pointer',
+                   opacity: isFirstMonth ? 0.35 : 1,
+                   display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M9 11L5 7L9 3" stroke={t.mid} strokeWidth="1.6"
                   strokeLinecap="round" strokeLinejoin="round"/>
