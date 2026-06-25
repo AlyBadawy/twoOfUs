@@ -121,21 +121,21 @@ public class QuizController {
 
         List<Answer> allAnswers = answerRepository.findByQuestionSetId(questionSet.getId());
 
-        if (allAnswers.size() < 2) {
-            return ResponseEntity.ok(Map.of("status", "waiting"));
-        }
-
         Answer myAnswer = allAnswers.stream()
             .filter(a -> a.getUser().getId().equals(currentUser.getId()))
             .findFirst()
             .orElse(null);
+
+        if (myAnswer == null) {
+            return ResponseEntity.notFound().build();
+        }
 
         Answer partnerAnswer = allAnswers.stream()
             .filter(a -> !a.getUser().getId().equals(currentUser.getId()))
             .findFirst()
             .orElse(null);
 
-        if (myAnswer == null || partnerAnswer == null) {
+        if (partnerAnswer == null) {
             return ResponseEntity.ok(Map.of("status", "waiting"));
         }
 

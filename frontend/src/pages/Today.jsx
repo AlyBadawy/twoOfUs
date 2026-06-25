@@ -420,12 +420,13 @@ export default function Today() {
       if (data?.status === 'generating') { setPhase('generating'); return; }
       setQuestionSet(data);
 
-      if (hasSubmittedToday()) {
+      try {
         const res = await api.getResult();
         if (res?.status === 'revealed') { setResult(res); setPhase('revealed'); }
-        else { setPhase('waiting'); startPollingResults(); }
-      } else {
-        setPhase('questions');
+        else { markSubmittedToday(); setPhase('waiting'); startPollingResults(); }
+      } catch (e) {
+        if (e.status === 404) { setPhase('questions'); }
+        else throw e;
       }
     } catch (e) { setError('Could not load today\'s questions.'); console.error(e); }
   }, [startPollingResults]);
