@@ -14,7 +14,7 @@ spec:
   project: default
   source:
     # TODO: update to your actual GitHub repo URL
-    repoURL: https://github.com/alybadawy/twoofus
+    repoURL: https://github.com/AlyBadawy/twoOfUs
     targetRevision: main
     path: k8s
   destination:
