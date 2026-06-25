@@ -21,10 +21,12 @@ public class QuestionGenerationService {
     private final ClaudeService claudeService;
 
     private static final String[] THEMES = {
-        "Love Language & Affection",
+        "Love Language & Vulnerability",
+        "Physical intimacy & Affection",
         "Conflict & Communication",
-        "Future & Shared Life",
         "Quality Time & Long Distance",
+        "Future & Shared Life",
+        "Trust & Security",
         "Personality & Relationship Style"
     };
 
@@ -66,7 +68,7 @@ public class QuestionGenerationService {
     }
 
     private String themeForDate(LocalDate date) {
-        // Cycle through the 5 themes based on day-of-year so each calendar day
+        // Cycle through the 7 themes based on day-of-year so each calendar day
         // consistently maps to the same theme regardless of when the app runs.
         int index = (date.getDayOfYear() - 1) % THEMES.length;
         return THEMES[index];
