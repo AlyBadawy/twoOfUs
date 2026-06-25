@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: twoofus
+  namespace: twoofus
+  labels:
+    app.kubernetes.io/name: twoofus
+    homelab/stack: twoofus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: twoofus
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: twoofus
+        homelab/stack: twoofus
+    spec:
+      containers:
+        - name: twoofus
+          image: ghcr.io/alybadawy/twoofus:latest
+          ports:
+            - containerPort: 8080
+          env:
+            # ── DB (from twoofus-db-secret via Vault key: twoofus-db) ─────────
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: twoofus-db-secret
+                  key: db-host
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: twoofus-db-secret
+                  key: db-name
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: twoofus-db-secret
+                  key: db-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: twoofus-db-secret
+                  key: db-password
+            # ── App secrets (from twoofus-app-secret via Vault key: twoofus) ──
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: twoofus-app-secret
+                  key: anthropic-api-key
+            - name: AUTHENTIK_ISSUER_URI
+              valueFrom:
+                secretKeyRef:
+                  name: twoofus-app-secret
+                  key: authentik-issuer-uri
+            - name: AUTHENTIK_AUDIENCE
+              valueFrom:
+                secretKeyRef:
+                  name: twoofus-app-secret
+                  key: authentik-client-id
+            - name: AUTHENTIK_REDIRECT_URI
+              valueFrom:
+                secretKeyRef:
+                  name: twoofus-app-secret
+                  key: authentik-redirect-uri
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
