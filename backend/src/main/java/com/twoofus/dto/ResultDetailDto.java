@@ -8,6 +8,10 @@ import lombok.Data;
 public class ResultDetailDto {
     private int position;
     private String questionText;
+    private String optionA;
+    private String optionB;
+    private String optionC;
+    private String optionD;
     private String myAnswer;
     private String partnerAnswer;
     private boolean match;

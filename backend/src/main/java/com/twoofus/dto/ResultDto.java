@@ -9,6 +9,8 @@ import java.util.List;
 @Builder
 public class ResultDto {
     private String status;
+    private String date;
+    private String theme;
     private Integer score;
     private Integer totalQuestions;
     private List<ResultDetailDto> details;

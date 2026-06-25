@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { getUserManager } from './auth';
 import Callback from './pages/Callback';
 import Today from './pages/Today';
+import Calendar from './pages/Calendar';
+import DayResult from './pages/DayResult';
 
 export default function App() {
   const [user, setUser] = useState(undefined); // undefined = still checking
@@ -42,8 +44,10 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/callback" element={<Callback onLogin={setUser} />} />
-      <Route path="/*" element={<Today />} />
+      <Route path="/callback"       element={<Callback onLogin={setUser} />} />
+      <Route path="/calendar"       element={<Calendar />} />
+      <Route path="/history/:date"  element={<DayResult />} />
+      <Route path="/*"              element={<Today />} />
     </Routes>
   );
 }

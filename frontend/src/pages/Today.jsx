@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { getUserManager } from '../auth';
 
@@ -60,7 +61,7 @@ const CheckIcon = ({ color = t.accent, size = 14 }) => (
 );
 
 // ── AppHeader ─────────────────────────────────────────────────────────────────
-function AppHeader({ title, date, theme, username }) {
+function AppHeader({ title, date, theme, username, onCalendar }) {
   const initial = (username || 'Y')[0].toUpperCase();
   return (
     <>
@@ -91,24 +92,41 @@ function AppHeader({ title, date, theme, username }) {
           )}
         </div>
 
-        {username && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6,
-                        background: t.card, borderRadius: 20,
-                        padding: '5px 10px 5px 5px',
-                        boxShadow: '0 1px 10px rgba(28,25,23,0.1)',
-                        flexShrink: 0, marginTop: 2 }}>
-            <div style={{ width: 27, height: 27, borderRadius: '50%',
-                          background: t.accent, display: 'flex',
-                          alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ font: "600 11px/1 'DM Sans', sans-serif", color: '#FFF' }}>
-                {initial}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginTop: 2 }}>
+          {/* Calendar / history button */}
+          <button onClick={onCalendar} title="View history"
+            style={{ width: 34, height: 34, borderRadius: '50%', border: `1px solid ${t.border}`,
+                     background: t.card, cursor: 'pointer', display: 'flex',
+                     alignItems: 'center', justifyContent: 'center',
+                     boxShadow: '0 1px 6px rgba(28,25,23,0.07)' }}>
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+              <rect x="1" y="2.5" width="13" height="11" rx="2" stroke={t.muted} strokeWidth="1.4"/>
+              <path d="M1 6.5H14" stroke={t.muted} strokeWidth="1.4"/>
+              <path d="M5 1V4M10 1V4" stroke={t.muted} strokeWidth="1.4" strokeLinecap="round"/>
+              <rect x="3.5" y="9" width="2" height="2" rx="0.5" fill={t.muted}/>
+              <rect x="6.5" y="9" width="2" height="2" rx="0.5" fill={t.muted}/>
+              <rect x="9.5" y="9" width="2" height="2" rx="0.5" fill={t.muted}/>
+            </svg>
+          </button>
+
+          {username && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6,
+                          background: t.card, borderRadius: 20,
+                          padding: '5px 10px 5px 5px',
+                          boxShadow: '0 1px 10px rgba(28,25,23,0.1)' }}>
+              <div style={{ width: 27, height: 27, borderRadius: '50%',
+                            background: t.accent, display: 'flex',
+                            alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ font: "600 11px/1 'DM Sans', sans-serif", color: '#FFF' }}>
+                  {initial}
+                </span>
+              </div>
+              <span style={{ font: "500 12px/1 'DM Sans', sans-serif", color: t.dark }}>
+                {username}
               </span>
             </div>
-            <span style={{ font: "500 12px/1 'DM Sans', sans-serif", color: t.dark }}>
-              {username}
-            </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div style={{ height: 1,
@@ -370,6 +388,7 @@ const page = { maxWidth: 430, margin: '0 auto', minHeight: '100vh' };
 
 // ── Today (main component) ────────────────────────────────────────────────────
 export default function Today() {
+  const navigate = useNavigate();
   const [phase, setPhase]           = useState('loading');
   const [questionSet, setQuestionSet] = useState(null);
   const [selected, setSelected]     = useState({});
@@ -504,7 +523,8 @@ export default function Today() {
         <div style={{ paddingBottom: 40 }}>
           <AppHeader title="Today's Results"
                      date={questionSet ? formatDate(questionSet.date) : ''}
-                     username={username} />
+                     username={username}
+                     onCalendar={() => navigate('/calendar')} />
           <ScoreHero score={result.score} total={result.totalQuestions} />
 
           {/* Legend */}
@@ -546,6 +566,7 @@ export default function Today() {
         date={questionSet ? formatDate(questionSet.date) : ''}
         theme={questionSet?.theme}
         username={username}
+        onCalendar={() => navigate('/calendar')}
       />
 
       <div style={{ paddingBottom: 140 }}>

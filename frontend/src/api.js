@@ -44,4 +44,6 @@ export const api = {
   submitAnswers: (answers) => request('/today/submit', { method: 'POST', body: JSON.stringify({ answers }) }),
   getResult:     ()        => request('/today/result'),
   getMe:         ()        => request('/me'),
+  getWeek:       (date)    => request(`/history/week?date=${date}`),
+  getDayResult:  (date)    => request(`/history/${date}`),
 };
